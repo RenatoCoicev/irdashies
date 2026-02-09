@@ -341,9 +341,23 @@ export class OverlayManager {
    * Close the container window
    */
   public closeAllOverlays(): void {
-    if (this.containerWindow && !this.containerWindow.isDestroyed()) {
-      this.containerWindow.close();
-    }
+    const allWindows = BrowserWindow.getAllWindows();
+    const settingsWindowId = this.currentSettingsWindow?.id;
+
+    allWindows.forEach((windowToClose) => {
+      if (windowToClose.isDestroyed()) return;
+      if (settingsWindowId && windowToClose.id === settingsWindowId) return;
+
+      windowToClose.close();
+
+      // Fallback for hung renderer: force destroy if it does not close promptly.
+      setTimeout(() => {
+        if (!windowToClose.isDestroyed()) {
+          windowToClose.destroy();
+        }
+      }, 250);
+    });
+
     this.containerWindow = undefined;
   }
 
